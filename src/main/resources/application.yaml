@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: hacienda_vimalu
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/xe
+    username: VIMALU
+    password: VIMALU
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+
+server:
+  servlet:
+    context-path: /hacienda_vimalu
+  port: 8085

@@ -3,6 +3,8 @@ package com.web.proyect.hacienda_vimalu.controller;
 import com.web.proyect.hacienda_vimalu.dto.ProductoDTO;
 import com.web.proyect.hacienda_vimalu.services.IProductoService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,9 +38,9 @@ public class ProductoController {
 
     @PostMapping
     public ResponseEntity<ProductoDTO> crear(
-            @RequestBody ProductoDTO producto) {
+            @Valid @RequestBody ProductoDTO producto) {
 
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.CREATED).body(
                 productoService.crear(producto)
         );
     }
@@ -46,7 +48,7 @@ public class ProductoController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductoDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody ProductoDTO producto) {
+            @Valid @RequestBody ProductoDTO producto) {
 
         return productoService.actualizar(id, producto)
                 .map(ResponseEntity::ok)

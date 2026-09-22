@@ -8,6 +8,8 @@ import com.web.proyect.hacienda_vimalu.entity.Usuario;
 import com.web.proyect.hacienda_vimalu.repository.PersonaRepository;
 import com.web.proyect.hacienda_vimalu.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.web.proyect.hacienda_vimalu.exception.DuplicateResourceException;
 
 import java.util.Optional;
 
@@ -26,7 +28,18 @@ public class UsuarioServiceImpl implements IUsuarioService {
     }
 
     @Override
+    @Transactional
     public Optional<UsuarioDTO> registrarCliente(RegistroDTO dto) {
+
+        if (personaRepository.existsByEmail(dto.email())) {
+            throw new DuplicateResourceException("El email ya está registrado");
+        }
+        if (personaRepository.existsByDni(dto.dni())) {
+            throw new DuplicateResourceException("El DNI ya está registrado");
+        }
+        if (usuarioRepository.existsByUsuario(dto.usuario())) {
+            throw new DuplicateResourceException("El nombre de usuario ya existe");
+        }
 
         Persona persona = new Persona();
 
@@ -50,7 +63,6 @@ public class UsuarioServiceImpl implements IUsuarioService {
         UsuarioDTO usuarioDTO = new UsuarioDTO(
                 usuarioGuardado.getIdUsuario(),
                 usuarioGuardado.getUsuario(),
-                usuarioGuardado.getPassword(),
                 usuarioGuardado.getRol(),
                 usuarioGuardado.getPersona().getIdPersona()
         );

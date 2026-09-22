@@ -1,6 +1,10 @@
 package com.web.proyect.hacienda_vimalu.controller;
 
 import com.web.proyect.hacienda_vimalu.dto.ReservaDTO;
+import com.web.proyect.hacienda_vimalu.dto.ReservaResponseDTO;
+import com.web.proyect.hacienda_vimalu.dto.SolicitudReservaDTO;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import com.web.proyect.hacienda_vimalu.services.IReservaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,10 +39,10 @@ public class ReservaController {
     }
 
     @PostMapping
-    public ResponseEntity<ReservaDTO> crear(
-            @RequestBody ReservaDTO reserva) {
+    public ResponseEntity<ReservaResponseDTO> crear(
+            @Valid @RequestBody SolicitudReservaDTO reserva) {
 
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.CREATED).body(
                 reservaService.crear(reserva)
         );
     }
@@ -46,7 +50,7 @@ public class ReservaController {
     @PutMapping("/{id}")
     public ResponseEntity<ReservaDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody ReservaDTO reserva) {
+            @Valid @RequestBody ReservaDTO reserva) {
 
         return reservaService.actualizar(id, reserva)
                 .map(ResponseEntity::ok)

@@ -3,10 +3,9 @@ package com.web.proyect.hacienda_vimalu.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class ResourceNotFoundException extends RuntimeException {
-
-    public ResourceNotFoundException(String mensaje) {
+@ResponseStatus(HttpStatus.CONFLICT)
+public class InsufficientStockException extends RuntimeException {
+    public InsufficientStockException(String mensaje) {
         super(mensaje);
     }
 }

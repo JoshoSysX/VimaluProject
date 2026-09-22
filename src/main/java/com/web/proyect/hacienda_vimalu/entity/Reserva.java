@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "reservas")
@@ -14,7 +15,7 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idReserva;
 
-    @Column(name = "fecha_creacion", insertable = false, updatable = false)
+    @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion;
 
     @Column(name = "fecha_reserva")
@@ -38,17 +39,16 @@ public class Reserva {
     @JoinColumn(name = "id_persona")
     private Persona persona;
 
-    @ManyToOne
-    @JoinColumn(name = "id_mesa")
-    private Mesa mesa;
-
     @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL)
-    private List<DetalleReserva> detalles;
+    private List<DetalleReserva> detalles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "reserva", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MesaReserva> mesasReservadas = new ArrayList<>();
 
     public Reserva() {
     }
 
-    public Reserva(Long idReserva, LocalDateTime fechaCreacion, LocalDate fechaReserva, String horaReserva, Integer cantPersonas, String motivo, EstadoReserva estadoReserva, BigDecimal total, Persona persona, Mesa mesa, List<DetalleReserva> detalles) {
+    public Reserva(Long idReserva, LocalDateTime fechaCreacion, LocalDate fechaReserva, String horaReserva, Integer cantPersonas, String motivo, EstadoReserva estadoReserva, BigDecimal total, Persona persona, List<DetalleReserva> detalles, List<MesaReserva> mesasReservadas) {
         this.idReserva = idReserva;
         this.fechaCreacion = fechaCreacion;
         this.fechaReserva = fechaReserva;
@@ -58,8 +58,8 @@ public class Reserva {
         this.estadoReserva = estadoReserva;
         this.total = total;
         this.persona = persona;
-        this.mesa = mesa;
         this.detalles = detalles;
+        this.mesasReservadas = mesasReservadas;
     }
 
     public Long getIdReserva() {
@@ -134,14 +134,6 @@ public class Reserva {
         this.persona = persona;
     }
 
-    public Mesa getMesa() {
-        return mesa;
-    }
-
-    public void setMesa(Mesa mesa) {
-        this.mesa = mesa;
-    }
-
     public List<DetalleReserva> getDetalles() {
         return detalles;
     }
@@ -149,5 +141,12 @@ public class Reserva {
     public void setDetalles(List<DetalleReserva> detalles) {
         this.detalles = detalles;
     }
-}
 
+    public List<MesaReserva> getMesasReservadas() {
+        return mesasReservadas;
+    }
+
+    public void setMesasReservadas(List<MesaReserva> mesasReservadas) {
+        this.mesasReservadas = mesasReservadas;
+    }
+}

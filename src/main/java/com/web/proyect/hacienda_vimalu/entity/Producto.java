@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "productos")
+@Table(name = "producto")
 public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,15 +14,18 @@ public class Producto {
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    @Column(length = 500)
     private String descripcion;
 
+    @Column(length = 20)
     private String categoria;
 
-    @Column(nullable = false)
+    @Column(name = "precio_unit", nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
     private Integer stock;
 
+    @Column(length = 200)
     private String imagen;
 
     public Producto() {

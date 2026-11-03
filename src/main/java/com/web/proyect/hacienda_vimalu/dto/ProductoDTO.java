@@ -27,6 +27,7 @@ public record ProductoDTO(
         @Min(value = 0)
         Integer stock,
 
+        @io.swagger.v3.oas.annotations.media.Schema(accessMode = io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY)
         String imagen
 ) {
 }

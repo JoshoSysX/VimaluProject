@@ -3,6 +3,7 @@ package com.web.proyect.hacienda_vimalu.controller;
 import com.web.proyect.hacienda_vimalu.dto.MesaDTO;
 import com.web.proyect.hacienda_vimalu.services.IMesaService;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class MesaController {
 
     @PostMapping
     public ResponseEntity<MesaDTO> crear(
-            @RequestBody MesaDTO mesa) {
+            @Valid @RequestBody MesaDTO mesa) {
 
         return ResponseEntity.ok(
                 mesaService.crear(mesa)
@@ -44,7 +45,7 @@ public class MesaController {
     @PutMapping("/{id}")
     public ResponseEntity<MesaDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody MesaDTO mesa) {
+            @Valid @RequestBody MesaDTO mesa) {
 
         return mesaService.actualizar(id, mesa)
                 .map(ResponseEntity::ok)

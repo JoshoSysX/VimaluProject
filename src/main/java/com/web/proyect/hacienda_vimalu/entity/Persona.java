@@ -12,12 +12,13 @@ public class Persona {
     @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(unique = true, nullable = false, length = 8)
+    @Column(unique = true, nullable = false, length = 8, columnDefinition = "CHAR(8)")
     private String dni;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "correo", unique = true, nullable = false, length = 100)
     private String email;
 
+    @Column(length = 15)
     private String telefono;
 
     public Persona() {

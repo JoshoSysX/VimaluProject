@@ -9,17 +9,17 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUsuario;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 50)
     private String usuario;
 
-    @Column(nullable = false)
+    @Column(name = "clave", nullable = false, length = 250)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private Rol rol;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "id_persona")
     private Persona persona;
 

@@ -3,6 +3,7 @@ package com.web.proyect.hacienda_vimalu.controller;
 import com.web.proyect.hacienda_vimalu.dto.PagoDTO;
 import com.web.proyect.hacienda_vimalu.services.IPagoService;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class PagoController {
 
     @PostMapping
     public ResponseEntity<PagoDTO> crear(
-            @RequestBody PagoDTO pago) {
+            @Valid @RequestBody PagoDTO pago) {
 
         return ResponseEntity.ok(
                 pagoService.crear(pago)
@@ -46,7 +47,7 @@ public class PagoController {
     @PutMapping("/{id}")
     public ResponseEntity<PagoDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody PagoDTO pago) {
+            @Valid @RequestBody PagoDTO pago) {
 
         return pagoService.actualizar(id, pago)
                 .map(ResponseEntity::ok)

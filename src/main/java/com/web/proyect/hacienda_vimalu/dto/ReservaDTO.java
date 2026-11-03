@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ReservaDTO(
+        @NotBlank @jakarta.validation.constraints.Size(max = 100) String nombre,
         @Parameter(hidden = true)
         Long idReserva,
         @NotNull(message = "La fecha de reserva es obligatoria")
@@ -29,7 +30,9 @@ public record ReservaDTO(
         BigDecimal total,
         @NotNull(message = "La persona es obligatoria")
         Long idPersona,
-        @NotNull(message = "La mesa es obligatoria")
-        Long idMesa
+        @NotNull(message = "El salón es obligatorio")
+        Long idSalon,
+        @Schema(accessMode = Schema.AccessMode.READ_ONLY) BigDecimal totalPagado,
+        @Schema(accessMode = Schema.AccessMode.READ_ONLY) BigDecimal saldoPendiente
 ) {
 }

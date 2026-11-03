@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 public class DetalleReserva {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_detalle_rsv")
     private Long idDetalle;
 
     @ManyToOne
@@ -21,9 +22,10 @@ public class DetalleReserva {
 
     private Integer cantidad;
 
-    @Column(name = "precio_compra")
+    @Column(name = "precio_fijo", precision = 10, scale = 2)
     private BigDecimal precioCompra;
 
+    @Column(name = "sub_total", precision = 10, scale = 2)
     private BigDecimal subtotal;
 
     public DetalleReserva() {

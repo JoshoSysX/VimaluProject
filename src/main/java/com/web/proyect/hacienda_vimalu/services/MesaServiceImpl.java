@@ -1,5 +1,9 @@
 package com.web.proyect.hacienda_vimalu.services;
 
+import com.web.proyect.hacienda_vimalu.exception.ReglaNegocioException;
+
+import com.web.proyect.hacienda_vimalu.repository.SalonRepository;
+
 import com.web.proyect.hacienda_vimalu.dto.MesaDTO;
 import com.web.proyect.hacienda_vimalu.entity.Mesa;
 import com.web.proyect.hacienda_vimalu.repository.MesaRepository;
@@ -13,9 +17,11 @@ import java.util.Optional;
 public class MesaServiceImpl implements IMesaService {
 
     private final MesaRepository mesaRepository;
+    private final SalonRepository salonRepository;
 
-    public MesaServiceImpl(MesaRepository mesaRepository) {
+    public MesaServiceImpl(MesaRepository mesaRepository, SalonRepository salonRepository) {
         this.mesaRepository = mesaRepository;
+        this.salonRepository = salonRepository;
     }
 
     @Override
@@ -43,8 +49,8 @@ public class MesaServiceImpl implements IMesaService {
         Mesa mesa = new Mesa();
 
         mesa.setCapacidad(m.capacidad());
-        mesa.setNroMesa(m.nroMesa());
-        mesa.setEstadoMesa(m.estadoMesa());
+        mesa.setNombre(m.nombre());
+        mesa.setCantidad(m.cantidad());
 
         return convertToDTO(mesaRepository.save(mesa));
     }
@@ -53,12 +59,16 @@ public class MesaServiceImpl implements IMesaService {
     @Transactional
     public Optional<MesaDTO> actualizar(Long id, MesaDTO m) {
 
-        return mesaRepository.findById(id)
+        return mesaRepository.buscarParaActualizar(id)
                 .map(mesa -> {
 
+                    var salones = salonRepository.findByMesa_IdMesa(id);
+                    if (!salones.isEmpty() && !mesa.getCapacidad().equals(m.capacidad())) {
+                        throw new ReglaNegocioException("No cambie la capacidad de un tipo de mesa ya asignado; cree otro tipo de mesa");
+                    }
                     mesa.setCapacidad(m.capacidad());
-                    mesa.setNroMesa(m.nroMesa());
-                    mesa.setEstadoMesa(m.estadoMesa());
+                    mesa.setNombre(m.nombre());
+                    mesa.setCantidad(m.cantidad());
 
                     return convertToDTO(mesaRepository.save(mesa));
                 });
@@ -80,9 +90,7 @@ public class MesaServiceImpl implements IMesaService {
 
         return new MesaDTO(
                 m.getIdMesa(),
-                m.getCapacidad(),
-                m.getNroMesa(),
-                m.getEstadoMesa()
+                m.getNombre(), m.getCapacidad(), m.getCantidad()
         );
     }
 }

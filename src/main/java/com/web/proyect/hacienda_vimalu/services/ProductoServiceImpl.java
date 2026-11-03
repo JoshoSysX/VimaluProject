@@ -12,6 +12,8 @@ import java.util.Optional;
 @Service
 public class ProductoServiceImpl implements IProductoService {
 
+    @org.springframework.beans.factory.annotation.Value("${server.servlet.context-path:}")
+    private String contextPath;
     private final ProductoRepository productoRepository;
 
     public ProductoServiceImpl(ProductoRepository productoRepository) {
@@ -64,7 +66,7 @@ public class ProductoServiceImpl implements IProductoService {
                     producto.setCategoria(p.categoria());
                     producto.setPrecio(p.precio());
                     producto.setStock(p.stock());
-                    producto.setImagen(p.imagen());
+                    if (p.imagen() != null) producto.setImagen(p.imagen());
 
                     return convertToDTO(
                             productoRepository.save(producto)
@@ -93,7 +95,7 @@ public class ProductoServiceImpl implements IProductoService {
                 p.getCategoria(),
                 p.getPrecio(),
                 p.getStock(),
-                p.getImagen()
+                p.getImagen() == null || p.getImagen().isBlank() ? null : contextPath + "/images/" + p.getImagen()
         );
     }
 }

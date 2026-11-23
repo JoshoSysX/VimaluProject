@@ -1,8 +1,6 @@
 package com.web.proyect.hacienda_vimalu.services;
 
 import java.util.Objects;
-import java.time.format.DateTimeFormatter;
-import java.time.LocalTime;
 import java.time.LocalDate;
 import com.web.proyect.hacienda_vimalu.exception.ReglaNegocioException;
 import com.web.proyect.hacienda_vimalu.entity.Pago;
@@ -17,10 +15,11 @@ import com.web.proyect.hacienda_vimalu.entity.EstadoReserva;
 import com.web.proyect.hacienda_vimalu.entity.Producto;
 import com.web.proyect.hacienda_vimalu.exception.ResourceNotFoundException;
 import com.web.proyect.hacienda_vimalu.exception.InsufficientStockException;
-import com.web.proyect.hacienda_vimalu.entity.Salon;
+import com.web.proyect.hacienda_vimalu.entity.Mesa;
 import com.web.proyect.hacienda_vimalu.entity.Persona;
 import com.web.proyect.hacienda_vimalu.entity.Reserva;
 import com.web.proyect.hacienda_vimalu.repository.SalonRepository;
+import com.web.proyect.hacienda_vimalu.repository.MesaRepository;
 import com.web.proyect.hacienda_vimalu.repository.PersonaRepository;
 import com.web.proyect.hacienda_vimalu.repository.ReservaRepository;
 import com.web.proyect.hacienda_vimalu.repository.ProductoRepository;
@@ -37,6 +36,7 @@ public class ReservaServiceImpl implements IReservaService {
     private final ReservaRepository reservaRepository;
     private final PersonaRepository personaRepository;
     private final SalonRepository salonRepository;
+    private final MesaRepository mesaRepository;
     private final ProductoRepository productoRepository;
     private final PagoRepository pagoRepository;
     private static final BigDecimal COSTO_RESERVA = new BigDecimal("25.00");
@@ -44,12 +44,13 @@ public class ReservaServiceImpl implements IReservaService {
     public ReservaServiceImpl(
             ReservaRepository reservaRepository,
             PersonaRepository personaRepository,
-            SalonRepository salonRepository,
+            SalonRepository salonRepository, MesaRepository mesaRepository,
             ProductoRepository productoRepository, PagoRepository pagoRepository) {
 
         this.reservaRepository = reservaRepository;
         this.personaRepository = personaRepository;
         this.salonRepository = salonRepository;
+        this.mesaRepository = mesaRepository;
         this.productoRepository = productoRepository;
         this.pagoRepository = pagoRepository;
     }
@@ -80,26 +81,29 @@ public class ReservaServiceImpl implements IReservaService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Persona no encontrada"));
 
-        Salon salon = salonRepository.buscarParaActualizar(r.idSalon())
+        Mesa mesa = mesaRepository.buscarParaActualizar(r.idMesa())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Salón no encontrado"));
+                        new ResourceNotFoundException("Mesa no encontrada"));
 
-        validarDisponibilidad(salon, r.fechaReserva(), r.cantPersonas(), null);
+        validarDisponibilidad(mesa, r.fechaReserva(), r.cantidadPersonas(), null);
         Reserva reserva = new Reserva();
 
+
         reserva.setFechaReserva(r.fechaReserva());
-        reserva.setHoraReserva(r.fechaReserva().atTime(LocalTime.parse(r.horaReserva())));
-        reserva.setNombre(r.nombre());
-        reserva.setCantPersonas(r.cantPersonas());
+        reserva.setHoraReserva(r.horaReserva());
+        reserva.setCantidadPersonas(r.cantidadPersonas());
         reserva.setMotivo(r.motivo());
         reserva.setFechaCreacion(LocalDateTime.now());
         reserva.setEstadoReserva(EstadoReserva.PENDIENTE);
         reserva.setPersona(persona);
-        reserva.setSalon(salon);
+        reserva.setMesa(mesa);
 
         BigDecimal total = BigDecimal.ZERO;
-        for (ItemReservaDTO item : r.items() == null ? List.<ItemReservaDTO>of() : r.items()) {
-            Producto producto = productoRepository.findById(item.idProducto())
+        // El mismo orden evita bloqueos cruzados cuando dos reservas piden varios productos.
+        List<ItemReservaDTO> items = r.items() == null ? List.of() : r.items().stream()
+                .sorted(java.util.Comparator.comparing(ItemReservaDTO::idProducto)).toList();
+        for (ItemReservaDTO item : items) {
+            Producto producto = productoRepository.buscarParaActualizar(item.idProducto())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Producto no encontrado: " + item.idProducto()));
             if (producto.getStock() < item.cantidad()) {
@@ -142,21 +146,20 @@ public class ReservaServiceImpl implements IReservaService {
                             .orElseThrow(() ->
                                     new ResourceNotFoundException("Persona no encontrada"));
 
-                    Salon salon = salonRepository.buscarParaActualizar(r.idSalon())
+                    Mesa mesa = mesaRepository.buscarParaActualizar(r.idMesa())
                             .orElseThrow(() ->
-                                    new ResourceNotFoundException("Salón no encontrado"));
+                                    new ResourceNotFoundException("Mesa no encontrada"));
 
                     if (r.estadoReserva() == EstadoReserva.PENDIENTE || r.estadoReserva() == EstadoReserva.CONFIRMADO) {
-                        validarDisponibilidad(salon, r.fechaReserva(), r.cantPersonas(), id);
+                        validarDisponibilidad(mesa, r.fechaReserva(), r.cantidadPersonas(), id);
                     }
                     reserva.setFechaReserva(r.fechaReserva());
-                    reserva.setHoraReserva(r.fechaReserva().atTime(LocalTime.parse(r.horaReserva())));
-                    reserva.setNombre(r.nombre());
-                    reserva.setCantPersonas(r.cantPersonas());
+                    reserva.setHoraReserva(r.horaReserva());
+                    reserva.setCantidadPersonas(r.cantidadPersonas());
                     reserva.setMotivo(r.motivo());
                     reserva.setEstadoReserva(r.estadoReserva());
                     reserva.setPersona(persona);
-                    reserva.setSalon(salon);
+                    reserva.setMesa(mesa);
 
                     return convertToDTO(
                             reservaRepository.save(reserva)
@@ -184,22 +187,21 @@ public class ReservaServiceImpl implements IReservaService {
         }).orElse(false);
     }
 
-    private void validarDisponibilidad(Salon salon, LocalDate fecha, int personas, Long idActual) {
+    private void validarDisponibilidad(Mesa mesa, LocalDate fecha, int personas, Long idActual) {
+        var salon = salonRepository.buscarParaActualizar(mesa.getSalon().getIdSalon())
+                .orElseThrow(() -> new ResourceNotFoundException("Salón no encontrado"));
         if (!"DISPONIBLE".equals(salon.getEstado())) {
             throw new ReglaNegocioException("El salón no está disponible");
         }
-        if (personas > salon.getMesa().getCapacidad()) {
-            throw new ReglaNegocioException(
-                    "Para reservar para más de " + salon.getMesa().getCapacidad() + " personas, comuníquese con un administrador");
+        if (personas > mesa.getCapacidad()) {
+            throw new ReglaNegocioException("La mesa permite hasta " + mesa.getCapacidad()
+                    + " personas; comuníquese con un administrador");
         }
-        long ocupadas = reservaRepository.findBySalon_IdSalonAndFechaReservaAndEstadoReservaIn(
-                salon.getIdSalon(), fecha, List.of(EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADO))
-                .stream().filter(r -> !Objects.equals(r.getIdReserva(), idActual)).count();
-        if (ocupadas >= salon.getCantidad()) {
-            throw new ReglaNegocioException("No quedan mesas disponibles en el salón para esa fecha");
-        }
+        boolean ocupada = reservaRepository.findByMesa_IdMesaAndFechaReservaAndEstadoReservaIn(
+                mesa.getIdMesa(), fecha, List.of(EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADO))
+                .stream().anyMatch(r -> !Objects.equals(r.getIdReserva(), idActual));
+        if (ocupada) throw new ReglaNegocioException("La mesa ya está reservada para esa fecha");
     }
-
     private ReservaDTO convertToDTO(Reserva r) {
         BigDecimal pagado = BigDecimal.ZERO;
         for (var pago : pagoRepository.findByReserva_IdReserva(r.getIdReserva())) {
@@ -207,16 +209,15 @@ public class ReservaServiceImpl implements IReservaService {
         }
 
         return new ReservaDTO(
-                r.getNombre(),
                 r.getIdReserva(),
                 r.getFechaReserva(),
-                r.getHoraReserva().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")),
-                r.getCantPersonas(),
+                r.getHoraReserva(),
+                r.getCantidadPersonas(),
                 r.getMotivo(),
                 r.getEstadoReserva(),
                 r.getTotal(),
                 r.getPersona().getIdPersona(),
-                r.getSalon().getIdSalon(), pagado, r.getTotal().subtract(pagado).max(BigDecimal.ZERO)
+                r.getMesa().getIdMesa(), pagado, r.getTotal().subtract(pagado).max(BigDecimal.ZERO)
         );
     }
 }

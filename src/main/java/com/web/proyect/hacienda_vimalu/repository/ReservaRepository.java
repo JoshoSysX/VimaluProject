@@ -9,10 +9,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
-    boolean existsBySalon_IdSalon(Long idSalon);
-    List<Reserva> findBySalon_IdSalonAndFechaReservaAndEstadoReservaIn(
-            Long idSalon, LocalDate fecha, List<EstadoReserva> estados);
-    List<Reserva> findBySalon_IdSalonAndEstadoReservaIn(Long idSalon, List<EstadoReserva> estados);
+    boolean existsByMesa_IdMesa(Long idMesa);
+    List<Reserva> findByMesa_IdMesaAndFechaReservaAndEstadoReservaIn(Long idMesa, LocalDate fecha, List<EstadoReserva> estados);
+    List<Reserva> findByMesa_IdMesaAndEstadoReservaIn(Long idMesa, List<EstadoReserva> estados);
+    List<Reserva> findByMesa_Salon_IdSalonAndFechaReservaAndEstadoReservaIn(Long idSalon, LocalDate fecha, List<EstadoReserva> estados);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from Reserva r where r.idReserva = :id")
     Optional<Reserva> buscarParaActualizar(Long id);

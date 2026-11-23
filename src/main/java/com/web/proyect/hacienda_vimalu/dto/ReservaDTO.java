@@ -12,17 +12,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ReservaDTO(
-        @NotBlank @jakarta.validation.constraints.Size(max = 100) String nombre,
         @Parameter(hidden = true)
         Long idReserva,
         @NotNull(message = "La fecha de reserva es obligatoria")
         LocalDate fechaReserva,
         @NotBlank(message = "La hora de reserva es obligatoria")
+        @Schema(example = "13:30", description = "Hora en formato HH:mm de 24 horas", minLength = 5, maxLength = 5)
         @Pattern(regexp = "([01]\\d|2[0-3]):[0-5]\\d", message = "La hora debe tener formato HH:mm")
         String horaReserva,
         @NotNull(message = "La cantidad de personas es obligatoria")
         @Min(value = 1, message = "debe ser al menos 1 persona")
-        Integer cantPersonas,
+        Integer cantidadPersonas,
         String motivo,
         @NotNull(message = "El estado de reserva es obligatorio")
         EstadoReserva estadoReserva,
@@ -30,8 +30,8 @@ public record ReservaDTO(
         BigDecimal total,
         @NotNull(message = "La persona es obligatoria")
         Long idPersona,
-        @NotNull(message = "El salón es obligatorio")
-        Long idSalon,
+        @NotNull(message = "La mesa es obligatoria")
+        Long idMesa,
         @Schema(accessMode = Schema.AccessMode.READ_ONLY) BigDecimal totalPagado,
         @Schema(accessMode = Schema.AccessMode.READ_ONLY) BigDecimal saldoPendiente
 ) {

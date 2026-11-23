@@ -1,15 +1,13 @@
 package com.web.proyect.hacienda_vimalu.services;
-
-import com.web.proyect.hacienda_vimalu.dto.*;
+import com.web.proyect.hacienda_vimalu.dto.SalonDTO;
 import com.web.proyect.hacienda_vimalu.entity.*;
 import com.web.proyect.hacienda_vimalu.repository.*;
 import com.web.proyect.hacienda_vimalu.exception.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-
+import java.time.ZoneId;
+import java.util.*;
 
 @Service
 public class SalonServiceImpl implements ISalonService {
@@ -17,110 +15,62 @@ public class SalonServiceImpl implements ISalonService {
     private final MesaRepository mesaRepository;
     private final ReservaRepository reservaRepository;
     private static final List<EstadoReserva> ACTIVAS = List.of(EstadoReserva.PENDIENTE, EstadoReserva.CONFIRMADO);
-
-    public SalonServiceImpl(SalonRepository salonRepository, MesaRepository mesaRepository,
-                            ReservaRepository reservaRepository) {
+    public SalonServiceImpl(SalonRepository salonRepository, MesaRepository mesaRepository, ReservaRepository reservaRepository) {
         this.salonRepository = salonRepository;
         this.mesaRepository = mesaRepository;
         this.reservaRepository = reservaRepository;
     }
-
     @Override @Transactional(readOnly = true)
-    public List<SalonDTO> listarTodo() {
-        return salonRepository.findAll().stream().map(this::convertToDTO).toList();
+    public List<SalonDTO> listarTodo(LocalDate fecha) {
+        return salonRepository.findAll().stream().map(s -> convertToDTO(s, fechaConsulta(fecha))).toList();
     }
     @Override @Transactional(readOnly = true)
-    public Optional<SalonDTO> buscarPorId(Long id) {
-        return salonRepository.findById(id).map(this::convertToDTO);
+    public Optional<SalonDTO> buscarPorId(Long id, LocalDate fecha) {
+        return salonRepository.findById(id).map(s -> convertToDTO(s, fechaConsulta(fecha)));
     }
     @Override @Transactional
     public SalonDTO crear(SalonDTO dto) {
         Salon salon = new Salon();
-        asignarDatos(salon, dto);
-        return convertToDTO(salonRepository.save(salon));
+        salon.setNombre(dto.nombre());
+        salon.setEstado(dto.estado());
+        salon.setCantidadMesas(0);
+        return convertToDTO(salonRepository.save(salon), fechaConsulta(null));
     }
     @Override @Transactional
     public Optional<SalonDTO> actualizar(Long id, SalonDTO dto) {
         return salonRepository.buscarParaActualizar(id).map(salon -> {
-            asignarDatos(salon, dto);
-            return convertToDTO(salonRepository.save(salon));
+            salon.setNombre(dto.nombre());
+            salon.setEstado(dto.estado());
+            salon.setCantidadMesas(Math.toIntExact(mesaRepository.countBySalon_IdSalon(id)));
+            return convertToDTO(salonRepository.save(salon), fechaConsulta(null));
         });
-    }
-    private void asignarDatos(Salon salon, SalonDTO dto) {
-        Long idAnterior = salon.getIdSalon() == null ? null : salon.getMesa().getIdMesa();
-        int cantidadAnterior = salon.getIdSalon() == null ? 0 : salon.getCantidad();
-        Mesa anterior = null;
-        Mesa mesa;
-        // Al cambiar de tipo, bloquear ambos inventarios en el mismo orden.
-        if (idAnterior != null && !idAnterior.equals(dto.idMesa())) {
-            Long primero = Math.min(idAnterior, dto.idMesa());
-            Long segundo = Math.max(idAnterior, dto.idMesa());
-            Mesa primera = buscarMesa(primero);
-            Mesa segunda = buscarMesa(segundo);
-            anterior = idAnterior.equals(primero) ? primera : segunda;
-            mesa = dto.idMesa().equals(primero) ? primera : segunda;
-        } else {
-            mesa = buscarMesa(dto.idMesa());
-        }
-        boolean mismoTipo = dto.idMesa().equals(idAnterior);
-        int disponibles = mesa.getCantidad() + (mismoTipo ? cantidadAnterior : 0);
-        if (dto.cantidad() == null || dto.cantidad() < 1 || dto.cantidad() > disponibles) {
-            throw new ReglaNegocioException("La cantidad supera las mesas disponibles de este tipo: " + disponibles);
-        }
-        if (salon.getIdSalon() != null) {
-            List<Reserva> activas = reservaRepository.findBySalon_IdSalonAndEstadoReservaIn(salon.getIdSalon(), ACTIVAS);
-            for (Reserva reserva : activas) {
-                if (reserva.getCantPersonas() > mesa.getCapacidad()) {
-                    throw new ReglaNegocioException("El tipo de mesa no alcanza para una reserva activa");
-                }
-                long ocupadas = activas.stream().filter(r -> r.getFechaReserva().equals(reserva.getFechaReserva())).count();
-                if (ocupadas > dto.cantidad()) {
-                    throw new ReglaNegocioException("No se pueden retirar mesas que tienen reservas activas");
-                }
-            }
-        }
-        // cantidad en Mesa es el inventario libre, no el total historico.
-        if (anterior != null) {
-            anterior.setCantidad(anterior.getCantidad() + cantidadAnterior);
-            mesaRepository.save(anterior);
-        }
-        mesa.setCantidad(disponibles - dto.cantidad());
-        mesaRepository.save(mesa);
-        salon.setMesa(mesa);
-        salon.setNombre(dto.nombre());
-        salon.setCantidad(dto.cantidad());
-        salon.setCapacidad(Math.multiplyExact(mesa.getCapacidad(), dto.cantidad()));
-        salon.setEstado(dto.estado());
     }
     @Override @Transactional(readOnly = true)
     public SalonDTO disponibilidad(Long id, LocalDate fecha) {
-        Salon salon = salonRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Salón no encontrado"));
-        int ocupadas = reservaRepository.findBySalon_IdSalonAndFechaReservaAndEstadoReservaIn(id, fecha, ACTIVAS).size();
-        int libres = "DISPONIBLE".equals(salon.getEstado()) ? Math.max(0, salon.getCantidad() - ocupadas) : 0;
-        return new SalonDTO(id, salon.getMesa().getIdMesa(), salon.getNombre(),
-                salon.getCantidad(), salon.getCapacidad(), salon.getEstado(),
-                fecha, ocupadas, libres, libres * salon.getMesa().getCapacidad());
+        return buscarPorId(id, fecha).orElseThrow(() -> new ResourceNotFoundException("Salón no encontrado"));
     }
     @Override @Transactional
     public boolean eliminar(Long id) {
         return salonRepository.buscarParaActualizar(id).map(salon -> {
-            if (reservaRepository.existsBySalon_IdSalon(id)) {
-                throw new ReglaNegocioException("El salón tiene reservas registradas y no puede eliminarse");
+            if (mesaRepository.existsBySalon_IdSalon(id)) {
+                throw new ReglaNegocioException("El salón tiene mesas registradas; retire primero las mesas sin reservas");
             }
-            Mesa mesa = buscarMesa(salon.getMesa().getIdMesa());
-            mesa.setCantidad(mesa.getCantidad() + salon.getCantidad());
-            mesaRepository.save(mesa);
             salonRepository.delete(salon);
             return true;
         }).orElse(false);
     }
-    private Mesa buscarMesa(Long id) {
-        return mesaRepository.buscarParaActualizar(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tipo de mesa no encontrado"));
+    private LocalDate fechaConsulta(LocalDate fecha) {
+        return fecha == null ? LocalDate.now(ZoneId.of("America/Lima")) : fecha;
     }
-    private SalonDTO convertToDTO(Salon salon) {
-        return new SalonDTO(salon.getIdSalon(), salon.getMesa().getIdMesa(), salon.getNombre(),
-                salon.getCantidad(), salon.getCapacidad(), salon.getEstado(), null, null, null, null);
+    private SalonDTO convertToDTO(Salon salon, LocalDate fecha) {
+        List<Mesa> mesas = mesaRepository.findBySalon_IdSalon(salon.getIdSalon());
+        Set<Long> ocupadas = new HashSet<>();
+        reservaRepository.findByMesa_Salon_IdSalonAndFechaReservaAndEstadoReservaIn(salon.getIdSalon(), fecha, ACTIVAS)
+                .forEach(r -> ocupadas.add(r.getMesa().getIdMesa()));
+        List<Mesa> libres = "DISPONIBLE".equals(salon.getEstado())
+                ? mesas.stream().filter(m -> !ocupadas.contains(m.getIdMesa())).toList() : List.of();
+        return new SalonDTO(salon.getIdSalon(), salon.getNombre(), mesas.size(),
+                mesas.stream().mapToInt(Mesa::getCapacidad).sum(), salon.getEstado(), fecha,
+                ocupadas.size(), libres.size(), libres.stream().mapToInt(Mesa::getCapacidad).sum());
     }
 }

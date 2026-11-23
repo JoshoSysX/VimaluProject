@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
+import com.web.proyect.hacienda_vimalu.security.UsuarioPrincipal;
 
 @RestController
 @RequestMapping("/api/reservas")
@@ -22,25 +25,30 @@ public class ReservaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReservaDTO>> listarTodo() {
+    public ResponseEntity<List<ReservaDTO>> listarTodo(Authentication authentication) {
         return ResponseEntity.ok(
-                reservaService.listarTodo()
+                reservaService.listarTodo().stream().filter(r -> puedeConsultar(authentication, r.idPersona())).toList()
         );
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ReservaDTO> buscarPorId(
-            @PathVariable Long id) {
+            @PathVariable Long id, Authentication authentication) {
 
         return reservaService.buscarPorId(id)
-                .map(ResponseEntity::ok)
+                .map(reserva -> {
+                    validarPersona(authentication, reserva.idPersona());
+                    return ResponseEntity.ok(reserva);
+                })
                 .orElseGet(() ->
                         ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<ReservaResponseDTO> crear(
-            @Valid @RequestBody SolicitudReservaDTO reserva) {
+            @Valid @RequestBody SolicitudReservaDTO reserva, Authentication authentication) {
+
+        validarPersona(authentication, reserva.idPersona());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 reservaService.crear(reserva)
@@ -67,5 +75,15 @@ public class ReservaController {
         }
 
         return ResponseEntity.notFound().build();
+    }
+
+    private boolean puedeConsultar(Authentication auth, Long idPersona) {
+        if (auth.getAuthorities().stream().anyMatch(a -> "ADMIN".equals(a.getAuthority()))) return true;
+        return auth.getPrincipal() instanceof UsuarioPrincipal principal
+                && principal.usuario().getPersona().getIdPersona().equals(idPersona);
+    }
+
+    private void validarPersona(Authentication auth, Long idPersona) {
+        if (!puedeConsultar(auth, idPersona)) throw new AccessDeniedException("Solo puede usar sus propias reservas");
     }
 }

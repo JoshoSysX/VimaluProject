@@ -1,0 +1,19 @@
+.footer {
+  background-color: var(--color-primario);
+  border-top: 2px solid var(--color-acento);
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  padding: 20px 0;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* iconos de redes: blancos y dorados al pasar el mouse */
+.redes a {
+  color: #fff;
+  font-size: 1.3rem;
+  transition: color 0.2s;
+}
+.redes a:hover {
+  color: var(--color-acento);
+}

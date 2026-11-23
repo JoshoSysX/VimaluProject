@@ -18,13 +18,16 @@ public class UsuarioServiceImpl implements IUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PersonaRepository personaRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     public UsuarioServiceImpl(
             UsuarioRepository usuarioRepository,
-            PersonaRepository personaRepository) {
+            PersonaRepository personaRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
 
         this.usuarioRepository = usuarioRepository;
         this.personaRepository = personaRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -53,7 +56,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
         Usuario usuario = new Usuario();
 
         usuario.setUsuario(dto.usuario());
-        usuario.setPassword(dto.password());
+        usuario.setPassword(passwordEncoder.encode(dto.password()));
         usuario.setRol(Rol.CLIENTE);
         usuario.setPersona(personaGuardada);
 

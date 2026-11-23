@@ -1,0 +1,239 @@
+<!-- ENCABEZADO -->
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="titulo">Gestión de Reservas</h1>
+    <p class="texto-suave mb-0">Administra, filtra y da seguimiento a las reservas de Hacienda VIMALU</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a routerLink="/reportes" class="btn-claro text-decoration-none"><i class="bi bi-bar-chart-line"></i> Reportes</a>
+    <a routerLink="/reservas/nuevo" class="btn-vimalu text-decoration-none"><i class="bi bi-plus-lg"></i> Nueva Reserva</a>
+  </div>
+</div>
+
+<!-- TARJETAS -->
+<div class="row g-4 mb-4">
+  <div class="col-md-6 col-xl-3">
+    <div class="tarjeta kpi">
+      <span class="icono"><i class="bi bi-calendar3"></i></span>
+      <p class="etiqueta">Total</p>
+      <p class="valor">{{reservas.length}}</p>
+      <p class="texto-suave small mb-0">reservas registradas</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="tarjeta kpi">
+      <span class="icono"><i class="bi bi-clock"></i></span>
+      <p class="etiqueta">Pendientes</p>
+      <p class="valor">{{cantidad('PENDIENTE')}}</p>
+      <p class="texto-suave small mb-0">por confirmar</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="tarjeta kpi">
+      <span class="icono"><i class="bi bi-calendar-check"></i></span>
+      <p class="etiqueta">Confirmadas</p>
+      <p class="valor">{{cantidad('CONFIRMADO')}}</p>
+      <p class="texto-suave small mb-0">con mesa reservada</p>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="tarjeta kpi">
+      <span class="icono"><i class="bi bi-check-circle"></i></span>
+      <p class="etiqueta">Terminadas</p>
+      <p class="valor">{{cantidad('TERMINADO')}}</p>
+      <p class="texto-suave small mb-0">atendidas en el restaurante</p>
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="tarjeta mb-4">
+  <div class="row g-3 align-items-end">
+    <div class="col-lg-4">
+      <label class="campo">Fecha</label>
+      <div class="d-flex align-items-center gap-2">
+        <input type="date" class="form-control" [(ngModel)]="desde" (ngModelChange)="filtrar()" aria-label="Desde">
+        <span>–</span>
+        <input type="date" class="form-control" [(ngModel)]="hasta" (ngModelChange)="filtrar()" aria-label="Hasta">
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <label class="campo">Buscar</label>
+      <div class="position-relative">
+        <i class="bi bi-search lupa"></i>
+        <input type="search" class="form-control ps-5" placeholder="Buscar por cliente o ID de reserva..." [(ngModel)]="busqueda" (ngModelChange)="filtrar()">
+      </div>
+    </div>
+    <div class="col-lg-2">
+      <label class="campo">Estado</label>
+      <select class="form-select" [(ngModel)]="estado" (ngModelChange)="filtrar()">
+        <option value="">Todos los estados</option>
+        @for (e of estados; track e) { <option [value]="e">{{e}}</option> }
+      </select>
+    </div>
+    <div class="col-lg-2">
+      <button class="btn-claro w-100" (click)="limpiarFiltros()"><i class="bi bi-x-lg"></i> Limpiar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LISTADO -->
+<div class="tarjeta">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h2 class="subtitulo">Listado de reservas</h2>
+      <p class="texto-suave small mb-0">Ordenado por fecha de reserva · más recientes primero</p>
+    </div>
+    <span class="id small">{{reservasFiltradas().length}} resultados</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>ID</th><th>Cliente</th><th>Fecha</th><th>Hora</th><th>Salón</th><th class="text-center">Personas</th>
+          <th>Estado</th><th class="text-end">Total (S/)</th><th class="text-end">Saldo (S/)</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of paginaActual(); track r.idReserva) {
+          <tr>
+            <td class="id">#R-{{r.idReserva}}</td>
+            <td><span class="d-block fw-medium">{{nombreCliente(r.idPersona)}}</span><small class="texto-suave">Persona {{r.idPersona}}</small></td>
+            <td>{{fechaCorta(r.fechaReserva)}}</td>
+            <td>{{r.horaReserva}}</td>
+            <td><span class="d-block">{{nombreSalon(r.idMesa)}}</span><small class="texto-suave">{{nombreMesa(r.idMesa)}}</small></td>
+            <td class="text-center">{{r.cantidadPersonas}}</td>
+            <td><span class="estado" [class]="r.estadoReserva.toLowerCase()">{{r.estadoReserva}}</span></td>
+            <td class="text-end">{{r.total ?? 0 | number:'1.2-2'}}</td>
+            <td class="text-end" [class.text-danger]="(r.saldoPendiente ?? 0) > 0">{{r.saldoPendiente ?? 0 | number:'1.2-2'}}</td>
+            <td class="text-nowrap">
+              <button class="accion me-1" title="Ver detalle" (click)="abrirDetalle(r)"><i class="bi bi-eye"></i></button>
+              <a class="accion editar d-inline-grid me-1" title="Editar" [routerLink]="['/reservas/editar', r.idReserva]"><i class="bi bi-pencil"></i></a>
+              <button class="accion eliminar" title="Eliminar" (click)="eliminar(r)"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="10" class="sin-datos">{{ reservas.length === 0 ? 'Sin datos' : 'Ninguna reserva coincide con los filtros' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (reservasFiltradas().length > 0) {
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+      <small class="texto-suave">
+        Mostrando {{(pagina - 1) * porPagina + 1}}–{{(pagina - 1) * porPagina + paginaActual().length}} de {{reservasFiltradas().length}} reservas
+      </small>
+      <div class="paginacion">
+        <button [disabled]="pagina === 1" (click)="pagina = pagina - 1"><i class="bi bi-chevron-left"></i></button>
+        @for (n of paginas(); track n) {
+          <button [class.activo]="n === pagina" (click)="pagina = n">{{n}}</button>
+        }
+        <button [disabled]="pagina === totalPaginas()" (click)="pagina = pagina + 1"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- MODAL DETALLE -->
+@if (detalle) {
+  <div class="modal-fondo" (click)="cerrarDetalle()">
+    <div class="modal-caja" (click)="$event.stopPropagation()">
+      <div class="d-flex justify-content-between align-items-start pb-3 mb-4 border-bottom">
+        <div>
+          <h3>Detalle de reserva</h3>
+          <span class="id">#R-{{detalle.idReserva}}</span>
+          <span class="estado ms-2" [class]="detalle.estadoReserva.toLowerCase()">{{detalle.estadoReserva}}</span>
+        </div>
+        <button class="cerrar" (click)="cerrarDetalle()"><i class="bi bi-x-lg"></i></button>
+      </div>
+
+      <p class="seccion">INFORMACIÓN DE LA RESERVA</p>
+      <div class="row g-3 mb-4">
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-person"></i></span><div><small>Cliente</small><strong>{{nombreCliente(detalle.idPersona)}}</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-person-vcard"></i></span><div><small>ID de persona</small><strong>{{detalle.idPersona}}</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-people"></i></span><div><small>Personas</small><strong>{{detalle.cantidadPersonas}} personas</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-calendar3"></i></span><div><small>Fecha</small><strong>{{fechaCorta(detalle.fechaReserva)}}</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-clock"></i></span><div><small>Hora</small><strong>{{detalle.horaReserva}}</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-building"></i></span><div><small>Salón</small><strong>{{nombreSalon(detalle.idMesa)}}</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-grid-3x3-gap"></i></span><div><small>Mesa</small><strong>{{nombreMesa(detalle.idMesa)}}</strong></div></div></div>
+        <div class="col-sm-4"><div class="dato"><span class="icono"><i class="bi bi-check-circle"></i></span><div><small>Motivo</small><strong>{{detalle.motivo || '-'}}</strong></div></div></div>
+      </div>
+
+      <!-- PRODUCTOS: GET /api/reservas/{id}/detalles -->
+      <p class="seccion">PRODUCTOS</p>
+      <table class="tabla mb-4">
+        <thead><tr><th>Producto</th><th class="text-center">Cantidad</th><th class="text-end">Precio (S/)</th><th class="text-end">Subtotal (S/)</th></tr></thead>
+        <tbody>
+          @if (cargandoDetalles) {
+            <tr><td colspan="4" class="sin-datos py-3">Cargando productos...</td></tr>
+          } @else {
+            @for (d of detalles; track d.idDetalle) {
+              <tr>
+                <td>{{nombreProducto(d.idProducto)}}</td>
+                <td class="text-center">{{d.cantidad}}</td>
+                <td class="text-end">{{d.precioCompra | number:'1.2-2'}}</td>
+                <td class="text-end">{{d.subtotal | number:'1.2-2'}}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="sin-datos py-3">Sin productos</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+
+      <p class="seccion">PAGOS REGISTRADOS</p>
+      <table class="tabla mb-3">
+        <thead><tr><th>Tipo</th><th>Medio de pago</th><th>Fecha</th><th>Estado</th><th class="text-end">Monto (S/)</th><th class="text-end">Comprobante</th></tr></thead>
+        <tbody>
+          @for (p of pagosDe(detalle); track p.idPago) {
+            <tr>
+              <td>{{p.tipoComprobante === 'RESERVA' ? 'Pago de reserva' : (p.tipoComprobante || 'Pago')}}</td>
+              <td>{{p.tipoPago === 'POR_DEFINIR' ? 'Por definir' : p.tipoPago}}</td>
+              <td>{{fechaCorta(p.fechaPago)}}</td>
+              <td><span class="estado" [ngClass]="claseEstadoPago(p.estado)">{{p.estado}}</span></td>
+              <td class="text-end">{{p.monto | number:'1.2-2'}}</td>
+              <td class="text-end text-nowrap">
+                @if (p.comprobante && (p.tipoPago === 'YAPE' || p.tipoPago === 'PLIN')) {
+                  <button class="accion me-1" title="Ver voucher" (click)="verComprobante(p)"><i class="bi bi-image"></i></button>
+                }
+                <!-- solo un comprobante POR_VERIFICAR se aprueba o rechaza (el backend tambien lo valida) -->
+                @if (p.estado === 'POR_VERIFICAR') {
+                  <button class="accion me-1" title="Aprobar voucher" [disabled]="procesandoPago" (click)="aprobarPago(p)"><i class="bi bi-check-lg"></i></button>
+                  <button class="accion" title="Rechazar voucher" [disabled]="procesandoPago" (click)="rechazarPago(p)"><i class="bi bi-x-lg"></i></button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="sin-datos py-3">Sin pagos registrados</td></tr>
+          }
+        </tbody>
+      </table>
+
+      <!-- COMPROBANTE: imagen protegida, pedida con el token del ADMIN -->
+      @if (comprobanteUrl) {
+        <div class="text-center mb-3">
+          <p class="seccion">VOUCHER DEL PAGO #{{comprobanteDe}}</p>
+          <img [src]="comprobanteUrl" alt="Comprobante de pago" class="img-fluid rounded border" style="max-height: 420px;">
+        </div>
+      }
+
+      <div class="row align-items-end">
+        <div class="col-md-6">
+          <small class="texto-suave">El cliente adjunta el voucher de Yape o Plin al reservar (pago POR_VERIFICAR). Revisa la captura: si es válida, aprueba el pago y confirma la reserva; si no, recházalo y rechaza la reserva. Solo los pagos PAGADO descuentan el saldo.</small>
+        </div>
+        <div class="col-md-6">
+          <div class="d-flex justify-content-between py-1"><span>Total de la reserva</span><strong>S/ {{detalle.total ?? 0 | number:'1.2-2'}}</strong></div>
+          <div class="d-flex justify-content-between py-1"><span class="texto-suave">Total pagado</span><span class="id">- S/ {{detalle.totalPagado ?? 0 | number:'1.2-2'}}</span></div>
+          <div class="saldo d-flex justify-content-between"><strong>Saldo pendiente</strong><strong class="text-danger">S/ {{detalle.saldoPendiente ?? 0 | number:'1.2-2'}}</strong></div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 border-top pt-4 mt-4">
+        <button class="btn-claro" (click)="cerrarDetalle()">Cerrar</button>
+        <a class="btn-vimalu text-decoration-none" [routerLink]="['/reservas/editar', detalle.idReserva]"><i class="bi bi-pencil"></i> Editar reserva</a>
+      </div>
+    </div>
+  </div>
+}

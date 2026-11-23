@@ -24,15 +24,17 @@ public class SalonController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SalonDTO>> listarTodo() {
-        return ResponseEntity.ok(salonService.listarTodo());
+    public ResponseEntity<List<SalonDTO>> listarTodo(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        return ResponseEntity.ok(salonService.listarTodo(fecha));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SalonDTO> buscarPorId(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
 
-        return salonService.buscarPorId(id)
+        return salonService.buscarPorId(id, fecha)
                 .map(ResponseEntity::ok)
                 .orElseGet(() ->
                         ResponseEntity.notFound().build());
@@ -41,7 +43,7 @@ public class SalonController {
     @GetMapping("/{id}/disponibilidad")
     public ResponseEntity<SalonDTO> disponibilidad(
             @PathVariable Long id,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         return ResponseEntity.ok(salonService.disponibilidad(id, fecha));
     }
 

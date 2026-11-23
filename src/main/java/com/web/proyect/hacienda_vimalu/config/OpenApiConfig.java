@@ -14,6 +14,11 @@ public class OpenApiConfig {
                         .title("Api Ecommerce Hacienda Vimalu")
                         .version("1.0")
                         .description("Documentación de servicios para el proyecto de Hacienda Vimalu")
-                );
+                )
+                .addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("BearerAuth"))
+                .components(new io.swagger.v3.oas.models.Components().addSecuritySchemes("BearerAuth",
+                        new io.swagger.v3.oas.models.security.SecurityScheme()
+                                .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
+                                .scheme("bearer").bearerFormat("JWT")));
     }
 }

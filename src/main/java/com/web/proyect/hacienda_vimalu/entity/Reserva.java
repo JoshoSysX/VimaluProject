@@ -14,26 +14,25 @@ public class Reserva {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idReserva;
-    @Column(length = 100, nullable = false)
-    private String nombre;
 
-    @Column(name = "fecha_creacion", updatable = false, columnDefinition = "DATE")
+    @Column(name = "fecha_creacion", updatable = false, columnDefinition = "TIMESTAMP")
     private LocalDateTime fechaCreacion;
 
     @Column(name = "fecha_reserva")
     private LocalDate fechaReserva;
 
-    @Column(name = "hora_reserva", columnDefinition = "DATE")
-    private LocalDateTime horaReserva;
+    @Column(name = "hora_reserva", length = 20)
+    private String horaReserva;
 
-    @Column(name = "cantidad")
-    private Integer cantPersonas;
+    @Column(name = "cantidad_personas")
+    private Integer cantidadPersonas;
+
 
     @Column(length = 100)
     private String motivo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "estado", nullable = false, length = 200)
     private EstadoReserva estadoReserva;
 
     @Column(precision = 10, scale = 2)
@@ -47,26 +46,23 @@ public class Reserva {
     private List<DetalleReserva> detalles = new ArrayList<>();
 
     @ManyToOne
-    @JoinColumn(name = "id_salon", nullable = false)
-    private Salon salon;
-
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    @JoinColumn(name = "id_mesa", nullable = false)
+    private Mesa mesa;
     public Reserva() {
     }
 
-    public Reserva(Long idReserva, LocalDateTime fechaCreacion, LocalDate fechaReserva, LocalDateTime horaReserva, Integer cantPersonas, String motivo, EstadoReserva estadoReserva, BigDecimal total, Persona persona, List<DetalleReserva> detalles, Salon salon) {
+    public Reserva(Long idReserva, LocalDateTime fechaCreacion, LocalDate fechaReserva, String horaReserva, Integer cantidadPersonas, String motivo, EstadoReserva estadoReserva, BigDecimal total, Persona persona, List<DetalleReserva> detalles, Mesa mesa) {
         this.idReserva = idReserva;
         this.fechaCreacion = fechaCreacion;
         this.fechaReserva = fechaReserva;
         this.horaReserva = horaReserva;
-        this.cantPersonas = cantPersonas;
+        this.cantidadPersonas = cantidadPersonas;
         this.motivo = motivo;
         this.estadoReserva = estadoReserva;
         this.total = total;
         this.persona = persona;
         this.detalles = detalles;
-        this.salon = salon;
+        this.mesa = mesa;
     }
 
     public Long getIdReserva() {
@@ -93,20 +89,20 @@ public class Reserva {
         this.fechaReserva = fechaReserva;
     }
 
-    public LocalDateTime getHoraReserva() {
+    public String getHoraReserva() {
         return horaReserva;
     }
 
-    public void setHoraReserva(LocalDateTime horaReserva) {
+    public void setHoraReserva(String horaReserva) {
         this.horaReserva = horaReserva;
     }
 
-    public Integer getCantPersonas() {
-        return cantPersonas;
+    public Integer getCantidadPersonas() {
+        return cantidadPersonas;
     }
 
-    public void setCantPersonas(Integer cantPersonas) {
-        this.cantPersonas = cantPersonas;
+    public void setCantidadPersonas(Integer cantidadPersonas) {
+        this.cantidadPersonas = cantidadPersonas;
     }
 
     public String getMotivo() {
@@ -149,9 +145,9 @@ public class Reserva {
         this.detalles = detalles;
     }
 
-    public Salon getSalon() { return salon; }
+    public Mesa getMesa() { return mesa; }
 
-    public void setSalon(Salon salon) {
-        this.salon = salon;
+    public void setMesa(Mesa mesa) {
+        this.mesa = mesa;
     }
 }

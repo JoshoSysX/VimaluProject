@@ -10,9 +10,9 @@ import java.util.Optional;
 
 public interface ISalonService {
 
-    List<SalonDTO> listarTodo();
+    List<SalonDTO> listarTodo(LocalDate fecha);
 
-    Optional<SalonDTO> buscarPorId(Long id);
+    Optional<SalonDTO> buscarPorId(Long id, LocalDate fecha);
 
     SalonDTO crear(SalonDTO salon);
 

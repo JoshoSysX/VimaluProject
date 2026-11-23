@@ -7,7 +7,7 @@ import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 public interface SalonRepository extends JpaRepository<Salon, Long> {
-    List<Salon> findByMesa_IdMesa(Long idMesa);
+
     // Evita que dos reservas tomen la ultima mesa al mismo tiempo.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from Salon s where s.idSalon = :id")
